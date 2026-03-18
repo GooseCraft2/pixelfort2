@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PixelFort</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --panel: #16161f;
+  --border: #2a2a3a;
+  --accent: #00ff88;
+  --accent2: #ff6b35;
+  --accent3: #4488ff;
+  --gold: #ffd700;
+  --red: #ff3355;
+  --text: #e0e0f0;
+  --muted: #6060a0;
+  --pixel: 3px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ─── SCREENS ─── */
+.screen { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.screen.hidden { display:none; }
+
+/* ─── MENU ─── */
+#menu-screen {
+  background: var(--bg);
+  flex-direction: column;
+  gap: 0;
+}
+
+.menu-bg {
+  position: absolute; inset:0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 31px, #1a1a2e 31px, #1a1a2e 32px),
+    repeating-linear-gradient(90deg, transparent, transparent 31px, #1a1a2e 31px, #1a1a2e 32px);
+  opacity: 0.4;
+}
+
+.menu-content {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 32px;
+}
+
+.logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(28px, 5vw, 52px);
+  color: var(--accent);
+  text-shadow: 0 0 30px #00ff8888, 4px 4px 0 #005533;
+  letter-spacing: 4px;
+  animation: logoPulse 3s ease-in-out infinite;
+}
+.logo span { color: var(--accent2); }
+
+@keyframes logoPulse {
+  0%,100% { text-shadow: 0 0 30px #00ff8888, 4px 4px 0 #005533; }
+  50% { text-shadow: 0 0 60px #00ff88cc, 4px 4px 0 #005533, 0 0 100px #00ff8844; }
+}
+
+.tagline {
+  color: var(--muted);
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+
+.menu-buttons {
+  display: flex; flex-direction: column; gap: 12px; width: 320px;
+}
+
+.btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  padding: 14px 24px;
+  border: 2px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.1s;
+  position: relative;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+.btn:hover { background: var(--border); color: var(--accent); border-color: var(--accent); }
+.btn.primary { border-color: var(--accent); color: var(--accent); }
+.btn.primary:hover { background: #00ff8822; }
+.btn.danger { border-color: var(--red); color: var(--red); }
+.btn.danger:hover { background: #ff335522; }
+.btn.gold { border-color: var(--gold); color: var(--gold); }
+.btn.gold:hover { background: #ffd70022; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── LOBBY ─── */
+#lobby-screen { flex-direction: column; gap: 20px; padding: 20px; }
+
+.lobby-header {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 16px;
+  color: var(--accent);
+  text-align: center;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border);
+  width: 100%;
+  max-width: 800px;
+}
+
+.lobby-body {
+  display: flex; gap: 20px;
+  width: 100%; max-width: 800px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.room-list-panel {
+  flex: 1;
+  background: var(--panel);
+  border: 2px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 1px;
+}
+
+.room-list { flex:1; overflow-y:auto; padding: 8px; }
+.room-list::-webkit-scrollbar { width:4px; }
+.room-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+.room-item {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.1s;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.room-item:hover { border-color: var(--accent); background: #00ff8811; }
+.room-item .room-name { color: var(--text); font-size: 17px; }
+.room-item .room-meta { color: var(--muted); font-size: 15px; }
+.room-item .room-lock { color: var(--gold); font-size: 14px; margin-left: 8px; }
+
+.create-panel {
+  width: 260px;
+  background: var(--panel);
+  border: 2px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+}
+
+.input-field {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  padding: 8px 12px;
+  width: 100%;
+  outline: none;
+}
+.input-field:focus { border-color: var(--accent); }
+.input-label { color: var(--muted); font-size: 15px; margin-bottom: 2px; }
+
+/* ─── GAME ─── */
+#game-screen {
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+#topbar {
+  width: 100%;
+  background: var(--panel);
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 20px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.stat-block {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 20px;
+}
+.stat-icon { font-size: 18px; }
+.stat-val { color: var(--gold); font-family: 'Press Start 2P', monospace; font-size: 11px; }
+.stat-label { color: var(--muted); font-size: 14px; }
+
+#wave-display {
+  margin-left: auto;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--accent2);
+}
+
+#game-area {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+#canvas {
+  display: block;
+  image-rendering: pixelated;
+  cursor: crosshair;
+}
+
+#sidebar {
+  width: 220px;
+  background: var(--panel);
+  border-left: 2px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sidebar-section {
+  border-bottom: 1px solid var(--border);
+  padding: 10px;
+}
+.sidebar-section h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.upgrade-btn {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  padding: 6px 10px;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 4px;
+  transition: all 0.1s;
+  display: flex; justify-content: space-between;
+}
+.upgrade-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.upgrade-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.upgrade-btn .cost { color: var(--gold); }
+
+.achievement-list {
+  flex: 1; overflow-y: auto; padding: 8px;
+}
+.achievement-list::-webkit-scrollbar { width: 4px; }
+.achievement-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+.achieve-item {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.achieve-item.done { border-color: var(--gold); color: var(--gold); }
+.achieve-item.done:hover { background: #ffd70011; }
+.achieve-item:not(.done) { opacity: 0.4; cursor: default; }
+.achieve-item .buff-name { font-size: 12px; color: var(--accent); }
+
+/* ─── POPUP ─── */
+.popup-overlay {
+  position: fixed; inset: 0;
+  background: #00000088;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.popup-overlay.hidden { display: none; }
+
+.popup {
+  background: var(--panel);
+  border: 2px solid var(--accent);
+  padding: 24px;
+  min-width: 280px;
+  max-width: 380px;
+  width: 90%;
+}
+.popup h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.popup p { color: var(--muted); font-size: 16px; margin-bottom: 14px; line-height: 1.4; }
+.popup .btn-row { display: flex; gap: 10px; }
+
+/* ─── TOAST ─── */
+#toast-container {
+  position: fixed;
+  top: 60px; right: 20px;
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 200;
+  pointer-events: none;
+}
+.toast {
+  background: var(--panel);
+  border: 2px solid var(--accent);
+  padding: 10px 16px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--accent);
+  animation: toastIn 0.2s ease-out, toastOut 0.3s ease-in 2.5s forwards;
+  max-width: 260px;
+}
+.toast.warn { border-color: var(--accent2); color: var(--accent2); }
+.toast.gold { border-color: var(--gold); color: var(--gold); }
+@keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:none; } }
+@keyframes toastOut { to { opacity:0; transform:translateX(20px); } }
+
+/* ─── GAMEOVER ─── */
+#gameover-screen {
+  flex-direction: column;
+  gap: 20px;
+  background: #0a0a0fdd;
+}
+.gameover-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(24px, 4vw, 42px);
+  color: var(--red);
+  text-shadow: 0 0 30px #ff3355aa;
+  animation: shake 0.5s ease-out;
+}
+@keyframes shake {
+  0%,100%{transform:none}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.gameover-stats {
+  font-size: 20px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 2;
+}
+.gameover-stats span { color: var(--gold); }
+
+/* ─── REPAIR BAR ─── */
+#repair-bar-wrap {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  display: none;
+}
+#repair-bar-wrap.active { display: block; }
+.repair-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--accent);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.repair-track {
+  height: 10px;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+}
+#repair-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: none;
+}
+
+/* ─── WAVE ANNOUNCE ─── */
+#wave-announce {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(18px, 3vw, 32px);
+  color: var(--accent2);
+  text-shadow: 0 0 20px #ff6b35aa;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 50;
+}
+#wave-announce.show {
+  animation: waveAnnounce 2s ease-out forwards;
+}
+@keyframes waveAnnounce {
+  0% { opacity:0; transform:translate(-50%,-50%) scale(0.7); }
+  20% { opacity:1; transform:translate(-50%,-50%) scale(1.1); }
+  70% { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  100% { opacity:0; transform:translate(-50%,-50%) scale(0.9); }
+}
+
+/* scrollbar global */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ═══ MENU ═══ -->
+<div id="menu-screen" class="screen">
+  <div class="menu-bg"></div>
+  <div class="menu-content">
+    <div class="logo">PIXEL<span>FORT</span></div>
+    <div class="tagline">▸ DEFEND ▸ UPGRADE ▸ SURVIVE ◂</div>
+    <div class="menu-buttons">
+      <button class="btn primary" onclick="showLobby()">▶ ИГРАТЬ</button>
+      <button class="btn" onclick="showAchievements()">★ ДОСТИЖЕНИЯ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOBBY ═══ -->
+<div id="lobby-screen" class="screen hidden">
+  <div class="lobby-header">▸ ВЫБОР КОМНАТЫ ◂</div>
+  <div class="lobby-body">
+    <div class="room-list-panel">
+      <div class="panel-title">ДОСТУПНЫЕ КОМНАТЫ</div>
+      <div class="room-list" id="room-list"></div>
+    </div>
+    <div class="create-panel">
+      <div class="panel-title">СОЗДАТЬ КОМНАТУ</div>
+      <div>
+        <div class="input-label">Название комнаты</div>
+        <input class="input-field" id="room-name-input" type="text" maxlength="20" placeholder="Моя крепость">
+      </div>
+      <div>
+        <div class="input-label">Пароль (опц.)</div>
+        <input class="input-field" id="room-pass-input" type="password" placeholder="••••">
+      </div>
+      <button class="btn primary" onclick="createRoom()">✚ СОЗДАТЬ</button>
+      <button class="btn" onclick="showMenu()">← НАЗАД</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PASSWORD POPUP ═══ -->
+<div id="pass-popup" class="popup-overlay hidden">
+  <div class="popup">
+    <h2>🔒 ПАРОЛЬ</h2>
+    <p>Введите пароль комнаты</p>
+    <input class="input-field" id="join-pass-input" type="password" placeholder="Пароль..." style="margin-bottom:14px">
+    <div class="btn-row">
+      <button class="btn primary" onclick="confirmJoin()">ВОЙТИ</button>
+      <button class="btn" onclick="closePassPopup()">ОТМЕНА</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ GAME ═══ -->
+<div id="game-screen" class="screen hidden">
+  <div id="topbar">
+    <div class="stat-block">
+      <span class="stat-icon">💰</span>
+      <span class="stat-val" id="coins-val">0</span>
+      <span class="stat-label">монет</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-icon">❤️</span>
+      <span class="stat-val" id="hp-val">100</span>
+      <span class="stat-label">дверь</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-icon">⚡</span>
+      <span class="stat-val" id="cps-val">2</span>
+      <span class="stat-label">м/с</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-icon">💀</span>
+      <span class="stat-val" id="kills-val">0</span>
+      <span class="stat-label">убито</span>
+    </div>
+    <div id="wave-display">ВОЛНА: <span id="wave-num">0</span></div>
+    <button class="btn" style="font-size:9px;padding:6px 12px;margin-left:auto" onclick="showMenu()">МЕНЮ</button>
+  </div>
+
+  <div id="game-area">
+    <canvas id="canvas"></canvas>
+
+    <div id="sidebar">
+      <div class="sidebar-section">
+        <h3>ПРОКАЧАТЬ</h3>
+        <button class="upgrade-btn" id="btn-bed" onclick="upgradeBed()">
+          <span>🛏 Кровать</span><span class="cost" id="bed-cost">50💰</span>
+        </button>
+        <button class="upgrade-btn" id="btn-door" onclick="upgradeDoor()">
+          <span>🚪 Дверь</span><span class="cost" id="door-cost">80💰</span>
+        </button>
+        <button class="upgrade-btn" id="btn-turret" onclick="startPlaceTurret()">
+          <span>🔫 Башня</span><span class="cost" id="turret-cost">60💰</span>
+        </button>
+        <button class="upgrade-btn" id="btn-upgrade-sel" onclick="upgradeSelected()" disabled>
+          <span>⬆ Улучшить</span><span class="cost" id="upg-cost">?💰</span>
+        </button>
+        <button class="upgrade-btn" id="btn-repair" onclick="repairDoor()">
+          <span>🔧 Починить</span><span class="cost" id="repair-cd">ГОТОВО</span>
+        </button>
+      </div>
+      <div class="sidebar-section">
+        <h3>БАФЫ</h3>
+        <div id="buff-list" class="achievement-list"></div>
+      </div>
+      <div class="sidebar-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+        <h3>ДОСТИЖЕНИЯ</h3>
+        <div id="achieve-list" class="achievement-list"></div>
+      </div>
+    </div>
+
+    <!-- repair progress bar -->
+    <div id="repair-bar-wrap">
+      <div class="repair-label">РЕМОНТ...</div>
+      <div class="repair-track"><div id="repair-fill"></div></div>
+    </div>
+
+    <!-- wave announcement -->
+    <div id="wave-announce"></div>
+  </div>
+</div>
+
+<!-- ═══ GAMEOVER ═══ -->
+<div id="gameover-screen" class="screen hidden">
+  <div class="gameover-title">☠ ПОРАЖЕНИЕ ☠</div>
+  <div class="gameover-stats" id="gameover-stats"></div>
+  <div style="display:flex;gap:12px">
+    <button class="btn primary" onclick="restartGame()">↺ СНОВА</button>
+    <button class="btn" onclick="showMenu()">⌂ МЕНЮ</button>
+  </div>
+</div>
+
+<!-- ═══ TOASTS ═══ -->
+<div id="toast-container"></div>
+
+<script>
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+const G = {
+  coins: 30,
+  cps: 2,
+  kills: 0,
+  wave: 0,
+  doorHp: 100,
+  doorMaxHp: 100,
+  bedLevel: 1,
+  doorLevel: 0, // 0=wood,1=stone,2=iron,3=gold,4=emerald,5=diamond
+  turrets: [],
+  enemies: [],
+  bullets: [],
+  particles: [],
+  selectedTurret: null,
+  placingTurret: false,
+  repairCooldown: 0,
+  repairingProgress: 0,
+  isRepairing: false,
+  waveActive: false,
+  enemiesLeft: 0,
+  spawnTimer: 0,
+  gameRunning: false,
+  lastTime: 0,
+  // grid
+  gridW: 0, gridH: 0, cellSize: 20,
+  // path (enemy path cells)
+  path: [],
+  // buffs earned
+  buffsEarned: [],
+};
+
+const DOOR_NAMES = ['Деревянная','Каменная','Железная','Золотая','Изумрудная','Алмазная','Адская','Небесная','Кристальная','Вечная'];
+const DOOR_COLORS = ['#8B6914','#888','#aaa','#FFD700','#50C878','#4FC3F7','#FF6B35','#E8D5FF','#00FFFF','#FFFFFF'];
+const DOOR_HP_MULT = [1,2,3.5,5,7,10,14,19,25,35];
+const DOOR_UPGR_COST = [80,150,280,500,900,1500,2500,4000,7000,12000];
+
+const BED_CPS = [2,4,7,12,20,35,60];
+const BED_COST = [50,100,200,400,800,1500,3000];
+
+const TURRET_LEVELS = [
+  {name:'Рогатка', dmg:5,  rate:2.0, range:4, color:'#8B6914', bullet:'#FFD700', cost:60},
+  {name:'Пистолет', dmg:12, rate:1.2, range:5, color:'#888',   bullet:'#ccc',    cost:120},
+  {name:'Пулемёт', dmg:18, rate:0.4, range:5, color:'#aaa',    bullet:'#fff',    cost:250},
+  {name:'Пушка',   dmg:45, rate:1.8, range:6, color:'#FFD700', bullet:'#FF8800', cost:500},
+  {name:'Лазер',   dmg:80, rate:0.3, range:7, color:'#50C878', bullet:'#00FF88', cost:1000},
+  {name:'Плазма',  dmg:200,rate:0.25,range:8, color:'#4FC3F7', bullet:'#00BFFF', cost:2000},
+];
+
+const ACHIEVEMENTS = [
+  {id:'kill10',  name:'Первая кровь',    desc:'Убить 10 мобов',         check:()=>G.kills>=10,     buff:'redirect'},
+  {id:'kill50',  name:'Мясник',          desc:'Убить 50 мобов',         check:()=>G.kills>=50,     buff:'freeze'},
+  {id:'wave5',   name:'Ветеран',         desc:'Пережить 5 волн',        check:()=>G.wave>=5,       buff:'doubleCoins'},
+  {id:'wave10',  name:'Генерал',         desc:'Пережить 10 волн',       check:()=>G.wave>=10,      buff:'airstrike'},
+  {id:'t3',      name:'Инженер',         desc:'Поставить 3 башни',      check:()=>G.turrets.length>=3, buff:'repair_instant'},
+  {id:'upg_door',name:'Кузнец',          desc:'Прокачать дверь 3 раза', check:()=>G.doorLevel>=3,  buff:'wall'},
+  {id:'bed3',    name:'Богатей',         desc:'Прокачать кровать 3 раза',check:()=>G.bedLevel>=3,  buff:'goldRush'},
+  {id:'wave20',  name:'Легенда',         desc:'Пережить 20 волн',       check:()=>G.wave>=20,      buff:'godMode'},
+];
+
+const BUFFS_DEF = {
+  redirect:       {name:'Перенаправить моба', desc:'Следующий моб идёт к случайному врагу', action: buffRedirect},
+  freeze:         {name:'Заморозка',          desc:'Замедлить всех мобов на 8 сек',          action: buffFreeze},
+  doubleCoins:    {name:'Двойные монеты',      desc:'+100% дохода на 30 сек',                 action: buffDoubleCoins},
+  airstrike:      {name:'Авиаудар',            desc:'Уничтожить всех мобов на карте',          action: buffAirstrike},
+  repair_instant: {name:'Мгновенный ремонт',  desc:'Починить дверь моментально',             action: buffInstantRepair},
+  wall:           {name:'Стальная стена',      desc:'Дверь неуязвима 1 волну',                action: buffWall},
+  goldRush:       {name:'Золотая лихорадка',   desc:'+500 монет прямо сейчас',                action: buffGoldRush},
+  godMode:        {name:'Режим бога',          desc:'Всё x10 урон башен на 20 сек',           action: buffGodMode},
+};
+
+let activeBuffs = {};
+let pendingJoinRoom = null;
+
+// ════════════════════════════════════════════
+//  NAV
+// ════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+function showMenu() {
+  if (G.gameRunning) { G.gameRunning = false; }
+  showScreen('menu-screen');
+}
+function showLobby() {
+  showScreen('lobby-screen');
+  renderRoomList();
+}
+function showAchievements() {
+  // just open game with no room for solo play
+  startGame();
+}
+
+// ════════════════════════════════════════════
+//  ROOMS (simulated)
+// ════════════════════════════════════════════
+const FAKE_ROOMS = [
+  {id:'r1', name:'Крепость Дракона', players:2, max:4, pass:false},
+  {id:'r2', name:'Замок Ночи',       players:1, max:4, pass:true,  password:'1234'},
+  {id:'r3', name:'Башня Хаоса',      players:3, max:4, pass:false},
+  {id:'r4', name:'Цитадель Огня',    players:4, max:4, pass:false},
+  {id:'r5', name:'Тихая Гавань',     players:1, max:4, pass:false},
+];
+
+function renderRoomList() {
+  const list = document.getElementById('room-list');
+  list.innerHTML = '';
+  FAKE_ROOMS.forEach(room => {
+    const el = document.createElement('div');
+    el.className = 'room-item';
+    const full = room.players >= room.max;
+    if (full) el.style.opacity = '0.4';
+    el.innerHTML = `
+      <div>
+        <div class="room-name">${room.name} ${room.pass ? '<span class="room-lock">🔒</span>' : ''}</div>
+        <div class="room-meta">${room.players}/${room.max} игроков</div>
+      </div>
+      <button class="btn" style="font-size:10px;padding:6px 10px" ${full?'disabled':''} onclick="joinRoom('${room.id}', event)">ВОЙТИ</button>
+    `;
+    list.appendChild(el);
+  });
+  // Add "your" room at top if created
+  const myRoomName = document.getElementById('room-name-input').value;
+  if (window._myRoom) {
+    const el = document.createElement('div');
+    el.className = 'room-item';
+    el.style.borderColor = 'var(--accent)';
+    el.innerHTML = `
+      <div>
+        <div class="room-name" style="color:var(--accent)">${window._myRoom.name} ★</div>
+        <div class="room-meta">1/4 игроков</div>
+      </div>
+      <button class="btn primary" style="font-size:10px;padding:6px 10px" onclick="startGame()">ИГРАТЬ</button>
+    `;
+    list.prepend(el);
+  }
+}
+
+function joinRoom(id, e) {
+  e.stopPropagation();
+  const room = FAKE_ROOMS.find(r => r.id === id);
+  if (!room) return;
+  if (room.pass) {
+    pendingJoinRoom = room;
+    document.getElementById('join-pass-input').value = '';
+    document.getElementById('pass-popup').classList.remove('hidden');
+  } else {
+    toast(`Присоединяетесь к "${room.name}"...`);
+    setTimeout(() => startGame(), 600);
+  }
+}
+
+function confirmJoin() {
+  const val = document.getElementById('join-pass-input').value;
+  if (pendingJoinRoom && val === pendingJoinRoom.password) {
+    closePassPopup();
+    toast(`Пароль верный! Вход...`);
+    setTimeout(() => startGame(), 600);
+  } else {
+    toast('❌ Неверный пароль!', 'warn');
+  }
+}
+
+function closePassPopup() {
+  document.getElementById('pass-popup').classList.add('hidden');
+}
+
+function createRoom() {
+  const name = document.getElementById('room-name-input').value.trim() || 'Моя крепость';
+  window._myRoom = { name };
+  toast(`✓ Комната "${name}" создана!`);
+  renderRoomList();
+}
+
+// ════════════════════════════════════════════
+//  CANVAS SETUP
+// ════════════════════════════════════════════
+let canvas, ctx;
+
+function initCanvas() {
+  canvas = document.getElementById('canvas');
+  ctx = canvas.getContext('2d');
+
+  const area = document.getElementById('game-area');
+  const sidebar = document.getElementById('sidebar');
+  const W = area.clientWidth - sidebar.clientWidth;
+  const H = area.clientHeight;
+
+  canvas.width = W;
+  canvas.height = H;
+
+  G.cellSize = 20;
+  G.gridW = Math.floor(W / G.cellSize);
+  G.gridH = Math.floor(H / G.cellSize);
+
+  buildPath();
+}
+
+function buildPath() {
+  // Simple S-shaped path from left edge to base
+  const cx = G.cellSize;
+  const midY = Math.floor(G.gridH / 2);
+  G.path = [];
+
+  // from left to mid
+  for (let x = 0; x <= Math.floor(G.gridW * 0.45); x++) G.path.push({x, y: midY});
+  // go up
+  for (let y = midY; y >= Math.floor(G.gridH * 0.25); y--) G.path.push({x: Math.floor(G.gridW * 0.45), y});
+  // go right
+  for (let x = Math.floor(G.gridW * 0.45); x <= Math.floor(G.gridW * 0.65); x++) G.path.push({x, y: Math.floor(G.gridH * 0.25)});
+  // go down
+  for (let y = Math.floor(G.gridH * 0.25); y <= Math.floor(G.gridH * 0.75); y++) G.path.push({x: Math.floor(G.gridW * 0.65), y});
+  // go right to base
+  for (let x = Math.floor(G.gridW * 0.65); x <= G.gridW - 4; x++) G.path.push({x, y: Math.floor(G.gridH * 0.75)});
+
+  // deduplicate
+  const seen = new Set();
+  G.path = G.path.filter(p => {
+    const k = `${p.x},${p.y}`;
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+}
+
+function cellToPixel(cx, cy) {
+  return { x: cx * G.cellSize + G.cellSize/2, y: cy * G.cellSize + G.cellSize/2 };
+}
+
+function pixelToCell(px, py) {
+  return { x: Math.floor(px / G.cellSize), y: Math.floor(py / G.cellSize) };
+}
+
+// ════════════════════════════════════════════
+//  START GAME
+// ════════════════════════════════════════════
+function startGame() {
+  // reset
+  G.coins = 30; G.cps = 2; G.kills = 0; G.wave = 0;
+  G.doorHp = 100; G.doorMaxHp = 100;
+  G.bedLevel = 1; G.doorLevel = 0;
+  G.turrets = []; G.enemies = []; G.bullets = []; G.particles = [];
+  G.selectedTurret = null; G.placingTurret = false;
+  G.repairCooldown = 0; G.repairingProgress = 0; G.isRepairing = false;
+  G.waveActive = false; G.enemiesLeft = 0; G.spawnTimer = 0;
+  G.gameRunning = true; G.lastTime = 0;
+  activeBuffs = {};
+
+  showScreen('game-screen');
+  initCanvas();
+  renderSidebar();
+  updateTopbar();
+  scheduleWave(3000);
+
+  requestAnimationFrame(gameLoop);
+}
+
+function restartGame() { startGame(); }
+
+// ════════════════════════════════════════════
+//  WAVE SYSTEM
+// ════════════════════════════════════════════
+function scheduleWave(delay) {
+  setTimeout(() => {
+    if (!G.gameRunning) return;
+    G.wave++;
+    const count = 3 + G.wave * 2 + (G.wave > 5 ? G.wave : 0);
+    G.enemiesLeft = count;
+    G.waveActive = true;
+    G.spawnTimer = 0;
+
+    const el = document.getElementById('wave-announce');
+    el.textContent = `— ВОЛНА ${G.wave} —`;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+
+    document.getElementById('wave-num').textContent = G.wave;
+    checkAchievements();
+  }, delay);
+}
+
+function spawnEnemy(dt) {
+  if (!G.waveActive || G.enemiesLeft <= 0) return;
+  G.spawnTimer -= dt;
+  if (G.spawnTimer > 0) return;
+
+  const tier = Math.max(0, Math.floor((G.wave - 1) / 3));
+  const isLast = (G.enemiesLeft === 1 && G.wave > 3);
+
+  const hp = isLast
+    ? (50 + G.wave * 30) * Math.pow(1.4, tier) * 3
+    : (20 + G.wave * 10) * Math.pow(1.3, tier);
+  const speed = isLast ? 0.6 : (0.8 + tier * 0.15 + Math.random() * 0.2);
+
+  G.enemies.push({
+    pathIdx: 0,
+    x: G.path[0].x * G.cellSize + G.cellSize/2,
+    y: G.path[0].y * G.cellSize + G.cellSize/2,
+    hp: hp, maxHp: hp,
+    speed: speed,
+    tier,
+    isLast,
+    frozen: 0,
+    id: Math.random(),
+  });
+
+  G.enemiesLeft--;
+  G.spawnTimer = 1.2 - Math.min(0.9, G.wave * 0.05);
+}
+
+// ════════════════════════════════════════════
+//  GAME LOOP
+// ════════════════════════════════════════════
+let coinAccum = 0;
+
+function gameLoop(ts) {
+  if (!G.gameRunning) return;
+  const dt = Math.min((ts - (G.lastTime || ts)) / 1000, 0.1);
+  G.lastTime = ts;
+
+  update(dt);
+  render();
+  updateUI();
+
+  requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+  // Coins
+  const cpsMulti = activeBuffs.doubleCoins ? 2 : 1;
+  coinAccum += G.cps * cpsMulti * dt;
+  if (coinAccum >= 1) { G.coins += Math.floor(coinAccum); coinAccum -= Math.floor(coinAccum); }
+
+  // Buffs timers
+  for (const k in activeBuffs) {
+    activeBuffs[k] -= dt;
+    if (activeBuffs[k] <= 0) delete activeBuffs[k];
+  }
+
+  // Spawning
+  spawnEnemy(dt);
+
+  // Move enemies
+  for (const en of G.enemies) {
+    if (en.frozen > 0) { en.frozen -= dt; continue; }
+    const speed = en.speed * G.cellSize;
+    let dist = speed * dt;
+
+    while (dist > 0 && en.pathIdx < G.path.length - 1) {
+      const target = G.path[en.pathIdx + 1];
+      const tx = target.x * G.cellSize + G.cellSize/2;
+      const ty = target.y * G.cellSize + G.cellSize/2;
+      const dx = tx - en.x, dy = ty - en.y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d <= dist) { en.x = tx; en.y = ty; en.pathIdx++; dist -= d; }
+      else { en.x += dx/d*dist; en.y += dy/d*dist; dist = 0; }
+    }
+
+    // Reached base (door)?
+    if (en.pathIdx >= G.path.length - 1) {
+      // attack door
+      if (!activeBuffs.wall) {
+        G.doorHp -= en.speed * 30 * dt;
+        if (G.doorHp < 0) G.doorHp = 0;
+      }
+      if (G.doorHp <= 0) { gameOver(); return; }
+
+      // Check if reached bed (end of path)
+      if (en.pathIdx >= G.path.length - 1 && !activeBuffs.wall) {
+        G.doorHp = 0; gameOver(); return;
+      }
+    }
+  }
+
+  // Turrets shoot
+  for (const t of G.turrets) {
+    t.cooldown -= dt;
+    if (t.cooldown > 0) continue;
+    const lvl = TURRET_LEVELS[t.level];
+    const range = lvl.range * G.cellSize;
+    const dmgMulti = activeBuffs.godMode ? 10 : 1;
+
+    // Find nearest enemy
+    let best = null, bestDist = Infinity;
+    for (const en of G.enemies) {
+      const dx = en.x - t.x, dy = en.y - t.y;
+      const d = Math.sqrt(dx*dx+dy*dy);
+      if (d < range && d < bestDist) { best = en; bestDist = d; }
+    }
+
+    if (best) {
+      t.cooldown = lvl.rate;
+      G.bullets.push({
+        x: t.x, y: t.y,
+        tx: best.x, ty: best.y,
+        target: best,
+        speed: 300,
+        dmg: lvl.dmg * dmgMulti,
+        color: lvl.bullet,
+        life: 1,
+      });
+    }
+  }
+
+  // Move bullets
+  for (let i = G.bullets.length - 1; i >= 0; i--) {
+    const b = G.bullets[i];
+    b.life -= dt * 3;
+    if (b.life <= 0 || !G.enemies.includes(b.target)) { G.bullets.splice(i, 1); continue; }
+    const dx = b.target.x - b.x, dy = b.target.y - b.y;
+    const d = Math.sqrt(dx*dx+dy*dy);
+    if (d < 6) {
+      // Hit
+      b.target.hp -= b.dmg;
+      spawnParticles(b.target.x, b.target.y, b.color, 3);
+      if (b.target.hp <= 0) {
+        G.kills++;
+        G.coins += 5 + b.target.tier * 3;
+        spawnParticles(b.target.x, b.target.y, '#FFD700', 8);
+        G.enemies.splice(G.enemies.indexOf(b.target), 1);
+        checkAchievements();
+      }
+      G.bullets.splice(i, 1);
+    } else {
+      b.x += dx/d * b.speed * dt;
+      b.y += dy/d * b.speed * dt;
+    }
+  }
+
+  // Particles
+  for (let i = G.particles.length - 1; i >= 0; i--) {
+    const p = G.particles[i];
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.life -= dt * 2;
+    if (p.life <= 0) G.particles.splice(i, 1);
+  }
+
+  // Wave done?
+  if (G.waveActive && G.enemiesLeft <= 0 && G.enemies.length === 0) {
+    G.waveActive = false;
+    toast(`✓ Волна ${G.wave} пройдена! +${G.wave * 10} монет`, 'gold');
+    G.coins += G.wave * 10;
+    checkAchievements();
+    scheduleWave(4000);
+  }
+
+  // Repair
+  if (G.isRepairing) {
+    G.repairingProgress += dt / 10;
+    const fill = document.getElementById('repair-fill');
+    fill.style.width = (G.repairingProgress * 100) + '%';
+    if (G.repairingProgress >= 1) {
+      G.doorHp = Math.min(G.doorMaxHp, G.doorHp + G.doorMaxHp * 0.5);
+      G.isRepairing = false;
+      G.repairingProgress = 0;
+      document.getElementById('repair-bar-wrap').classList.remove('active');
+      toast('🔧 Дверь починена!');
+    }
+  }
+
+  // Repair cooldown
+  if (G.repairCooldown > 0) {
+    G.repairCooldown -= dt;
+    if (G.repairCooldown < 0) G.repairCooldown = 0;
+  }
+}
+
+function spawnParticles(x, y, color, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 30 + Math.random() * 60;
+    G.particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, color, life: 1, size: 2 + Math.random()*3 });
+  }
+}
+
+// ════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════
+function render() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // BG grid
+  ctx.fillStyle = '#0d0d14';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = '#1a1a28';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < G.gridW; x++) {
+    for (let y = 0; y < G.gridH; y++) {
+      ctx.strokeRect(x * G.cellSize, y * G.cellSize, G.cellSize, G.cellSize);
+    }
+  }
+
+  // PATH
+  ctx.fillStyle = '#1e1e2e';
+  for (const p of G.path) {
+    ctx.fillRect(p.x * G.cellSize, p.y * G.cellSize, G.cellSize, G.cellSize);
+  }
+  // Path edge highlight
+  ctx.strokeStyle = '#2a2a40';
+  ctx.lineWidth = 1;
+  for (const p of G.path) {
+    ctx.strokeRect(p.x * G.cellSize + 0.5, p.y * G.cellSize + 0.5, G.cellSize - 1, G.cellSize - 1);
+  }
+
+  // BASE (right side, 4 wide)
+  drawBase();
+
+  // TURRETS
+  for (const t of G.turrets) {
+    const lvl = TURRET_LEVELS[t.level];
+    const cs = G.cellSize;
+    const sel = G.selectedTurret === t;
+
+    if (sel) {
+      ctx.strokeStyle = '#ffffff44';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, lvl.range * cs, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.fillStyle = sel ? '#ffffff' : lvl.color;
+    ctx.fillRect(t.x - cs*0.4, t.y - cs*0.4, cs*0.8, cs*0.8);
+    ctx.fillStyle = '#00000088';
+    ctx.fillRect(t.x - cs*0.15, t.y - cs*0.5, cs*0.3, cs*0.35);
+
+    // level pips
+    for (let i = 0; i <= t.level; i++) {
+      ctx.fillStyle = lvl.bullet;
+      ctx.fillRect(t.x - cs*0.3 + i*5, t.y + cs*0.3, 4, 4);
+    }
+  }
+
+  // ENEMIES
+  for (const en of G.enemies) {
+    const cs = G.cellSize;
+    const tier = en.tier;
+    const colors = ['#ff3355','#ff6b35','#ffd700','#50c878','#4fc3f7','#e879f9'];
+    const c = colors[Math.min(tier, colors.length-1)];
+
+    ctx.fillStyle = en.isLast ? '#ffffff' : c;
+    if (en.frozen > 0) ctx.fillStyle = '#aaccff';
+
+    const size = en.isLast ? cs * 0.9 : cs * 0.65;
+    ctx.fillRect(en.x - size/2, en.y - size/2, size, size);
+
+    // skull for last
+    if (en.isLast) {
+      ctx.fillStyle = '#00000088';
+      ctx.font = `${cs}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('☠', en.x, en.y);
+    }
+
+    // HP bar
+    const bw = cs * 1.2;
+    const bh = 4;
+    const bx = en.x - bw/2, by = en.y - size/2 - 8;
+    ctx.fillStyle = '#333';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.fillStyle = en.isLast ? '#ff3355' : '#00ff88';
+    ctx.fillRect(bx, by, bw * (en.hp / en.maxHp), bh);
+  }
+
+  // BULLETS
+  for (const b of G.bullets) {
+    ctx.fillStyle = b.color;
+    ctx.globalAlpha = b.life;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  // PARTICLES
+  for (const p of G.particles) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+
+  // PLACING TURRET HINT
+  if (G.placingTurret) {
+    ctx.fillStyle = '#ffffff22';
+    ctx.font = '14px VT323';
+    ctx.textAlign = 'center';
+    ctx.fillText('Кликни на свободную клетку для размещения башни', W/2, 20);
+  }
+
+  // SELECTED TURRET info
+  if (G.selectedTurret) {
+    const t = G.selectedTurret;
+    const lvl = TURRET_LEVELS[t.level];
+    ctx.fillStyle = '#ffffff99';
+    ctx.font = '14px VT323';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${lvl.name} (ур.${t.level+1})`, 8, H - 8);
+  }
+}
+
+function drawBase() {
+  const cs = G.cellSize;
+  const bx = G.gridW - 4;
+  const by = 0;
+  const bh = G.gridH;
+
+  // Base bg
+  ctx.fillStyle = '#141420';
+  ctx.fillRect(bx * cs, 0, 4 * cs, bh * cs);
+  ctx.strokeStyle = '#2a2a44';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(bx * cs, 0, 4 * cs, bh * cs);
+
+  // Wall texture
+  for (let gy = 0; gy < bh; gy += 2) {
+    for (let gx = bx; gx < bx + 4; gx++) {
+      const offset = (gy % 4 === 0) ? 0 : cs;
+      ctx.fillStyle = '#1e1e30';
+      ctx.fillRect(gx * cs + 1, gy * cs + 1, cs - 2, cs - 2);
+    }
+  }
+
+  // BED (center of base)
+  const bedX = (bx + 1) * cs;
+  const bedY = Math.floor(bh / 2 - 2) * cs;
+  const bedCol = ['#8B6914','#cc8844','#ddaaff','#FFD700','#00FF88','#00BFFF'][Math.min(G.bedLevel - 1, 5)];
+
+  // Bed frame
+  ctx.fillStyle = bedCol;
+  ctx.fillRect(bedX + 2, bedY + 2, cs * 2 - 4, cs * 3 - 4);
+  ctx.fillStyle = '#ffffff33';
+  ctx.fillRect(bedX + 4, bedY + 4, cs * 2 - 8, cs - 4); // pillow
+  ctx.fillStyle = '#00000044';
+  ctx.fillRect(bedX + 4, bedY + cs, cs * 2 - 8, cs * 2 - 8); // blanket
+
+  // Bed label
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `${cs * 1.2}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🛏', bedX + cs, bedY + cs * 1.5);
+
+  // CPS indicator
+  ctx.fillStyle = '#ffd70099';
+  ctx.font = '12px VT323';
+  ctx.textAlign = 'center';
+  ctx.fillText(`+${G.cps}/с`, bedX + cs, bedY + cs * 3 + 10);
+
+  // DOOR (where path meets base)
+  const lastPath = G.path[G.path.length - 1];
+  const doorX = (bx) * cs;
+  const doorY = lastPath.y * cs;
+  const doorW = cs;
+  const doorH = cs * 2;
+
+  const doorColor = DOOR_COLORS[G.doorLevel];
+  const hpRatio = G.doorHp / G.doorMaxHp;
+
+  // Door frame
+  ctx.fillStyle = '#333355';
+  ctx.fillRect(doorX - 2, doorY - 2, doorW + 4, doorH + 4);
+
+  // Door fill with hp color
+  const r = Math.floor(255 * (1 - hpRatio)), g = Math.floor(255 * hpRatio);
+  ctx.fillStyle = doorColor;
+  ctx.globalAlpha = 0.6 + hpRatio * 0.4;
+  ctx.fillRect(doorX, doorY, doorW, doorH * hpRatio);
+  ctx.globalAlpha = 1;
+
+  // Door icon
+  ctx.font = `${cs * 1.3}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🚪', doorX + doorW/2, doorY + doorH/2);
+
+  // Door HP text
+  ctx.fillStyle = hpRatio > 0.3 ? '#00ff88' : '#ff3355';
+  ctx.font = '11px VT323';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${Math.ceil(G.doorHp)}/${G.doorMaxHp}`, doorX + doorW/2, doorY - 8);
+
+  // Door name
+  ctx.fillStyle = doorColor;
+  ctx.font = '10px VT323';
+  ctx.fillText(DOOR_NAMES[G.doorLevel], doorX + doorW/2, doorY + doorH + 12);
+}
+
+// ════════════════════════════════════════════
+//  CANVAS CLICK
+// ════════════════════════════════════════════
+document.getElementById('canvas').addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const cell = pixelToCell(mx, my);
+
+  if (G.placingTurret) {
+    tryPlaceTurret(cell, mx, my);
+    return;
+  }
+
+  // Click on existing turret
+  for (const t of G.turrets) {
+    const tc = pixelToCell(t.x, t.y);
+    if (tc.x === cell.x && tc.y === cell.y) {
+      G.selectedTurret = (G.selectedTurret === t) ? null : t;
+      updateSidebar();
+      return;
+    }
+  }
+
+  // Click on bed
+  const bx = G.gridW - 4;
+  const bedCx = bx + 1;
+  const bedCy = Math.floor(G.gridH / 2 - 2);
+  if (cell.x >= bedCx && cell.x <= bedCx + 1 && cell.y >= bedCy && cell.y <= bedCy + 2) {
+    upgradeBed();
+    return;
+  }
+
+  // Click on door
+  const lastPath = G.path[G.path.length - 1];
+  if (cell.x === bx && (cell.y === lastPath.y || cell.y === lastPath.y + 1)) {
+    upgradeDoor();
+    return;
+  }
+
+  G.selectedTurret = null;
+  updateSidebar();
+});
+
+function tryPlaceTurret(cell, mx, my) {
+  // Can't place on path
+  const onPath = G.path.some(p => p.x === cell.x && p.y === cell.y);
+  // Can't place on base
+  const onBase = cell.x >= G.gridW - 4;
+  // Can't place on existing turret
+  const occupied = G.turrets.some(t => {
+    const tc = pixelToCell(t.x, t.y);
+    return tc.x === cell.x && tc.y === cell.y;
+  });
+  if (onPath || onBase || occupied) {
+    toast('❌ Нельзя поставить здесь!', 'warn');
+    return;
+  }
+
+  const cost = TURRET_LEVELS[0].cost;
+  if (G.coins < cost) { toast(`❌ Нужно ${cost} монет!`, 'warn'); return; }
+  G.coins -= cost;
+
+  G.turrets.push({
+    x: cell.x * G.cellSize + G.cellSize/2,
+    y: cell.y * G.cellSize + G.cellSize/2,
+    level: 0,
+    cooldown: 0,
+  });
+
+  G.placingTurret = false;
+  canvas.style.cursor = 'crosshair';
+  toast('✓ Башня установлена!');
+  checkAchievements();
+  updateSidebar();
+}
+
+// ════════════════════════════════════════════
+//  UPGRADES
+// ════════════════════════════════════════════
+function upgradeBed() {
+  if (G.bedLevel >= BED_CPS.length) { toast('Максимальный уровень!', 'warn'); return; }
+  const cost = BED_COST[G.bedLevel - 1];
+  if (G.coins < cost) { toast(`❌ Нужно ${cost} монет!`, 'warn'); return; }
+  G.coins -= cost;
+  G.bedLevel++;
+  G.cps = BED_CPS[G.bedLevel - 1];
+  toast(`🛏 Кровать ур.${G.bedLevel}! +${G.cps} м/с`, 'gold');
+  checkAchievements();
+  updateSidebar();
+}
+
+function upgradeDoor() {
+  const nextLvl = G.doorLevel + 1;
+  if (nextLvl >= DOOR_NAMES.length) { toast('Максимальный уровень двери!', 'warn'); return; }
+  const cost = DOOR_UPGR_COST[G.doorLevel];
+  if (G.coins < cost) { toast(`❌ Нужно ${cost} монет!`, 'warn'); return; }
+  G.coins -= cost;
+  G.doorLevel++;
+  G.doorMaxHp = 100 * DOOR_HP_MULT[G.doorLevel];
+  G.doorHp = G.doorMaxHp;
+  toast(`🚪 ${DOOR_NAMES[G.doorLevel]}! HP: ${G.doorMaxHp}`, 'gold');
+  checkAchievements();
+  updateSidebar();
+}
+
+function startPlaceTurret() {
+  G.placingTurret = true;
+  G.selectedTurret = null;
+  canvas.style.cursor = 'cell';
+  toast('Кликни на свободную клетку');
+}
+
+function upgradeSelected() {
+  const t = G.selectedTurret;
+  if (!t) return;
+  const nextLvl = t.level + 1;
+  if (nextLvl >= TURRET_LEVELS.length) { toast('Макс уровень башни!', 'warn'); return; }
+  const cost = TURRET_LEVELS[nextLvl].cost;
+  if (G.coins < cost) { toast(`❌ Нужно ${cost} монет!`, 'warn'); return; }
+  G.coins -= cost;
+  t.level++;
+  toast(`⬆ Башня → ${TURRET_LEVELS[t.level].name}!`, 'gold');
+  updateSidebar();
+}
+
+function repairDoor() {
+  if (G.isRepairing) { toast('Уже идёт ремонт!', 'warn'); return; }
+  if (G.repairCooldown > 0) { toast(`Кулдаун: ${Math.ceil(G.repairCooldown)}с`, 'warn'); return; }
+  G.isRepairing = true;
+  G.repairingProgress = 0;
+  G.repairCooldown = 15;
+  document.getElementById('repair-bar-wrap').classList.add('active');
+  toast('🔧 Ремонт начат...');
+}
+
+// ════════════════════════════════════════════
+//  UI UPDATE
+// ════════════════════════════════════════════
+function updateTopbar() {
+  document.getElementById('coins-val').textContent = Math.floor(G.coins);
+  document.getElementById('hp-val').textContent = Math.ceil(G.doorHp);
+  document.getElementById('cps-val').textContent = G.cps;
+  document.getElementById('kills-val').textContent = G.kills;
+}
+
+function updateUI() {
+  updateTopbar();
+  updateSidebar();
+}
+
+function updateSidebar() {
+  // Bed
+  const bedBtn = document.getElementById('btn-bed');
+  if (G.bedLevel < BED_CPS.length) {
+    const cost = BED_COST[G.bedLevel - 1];
+    document.getElementById('bed-cost').textContent = `${cost}💰`;
+    bedBtn.disabled = G.coins < cost;
+  } else {
+    document.getElementById('bed-cost').textContent = 'МАКС';
+    bedBtn.disabled = true;
+  }
+
+  // Door
+  const doorBtn = document.getElementById('btn-door');
+  if (G.doorLevel + 1 < DOOR_NAMES.length) {
+    const cost = DOOR_UPGR_COST[G.doorLevel];
+    document.getElementById('door-cost').textContent = `${cost}💰`;
+    doorBtn.disabled = G.coins < cost;
+  } else {
+    document.getElementById('door-cost').textContent = 'МАКС';
+    doorBtn.disabled = true;
+  }
+
+  // Turret place
+  const tCost = TURRET_LEVELS[0].cost;
+  document.getElementById('turret-cost').textContent = `${tCost}💰`;
+  document.getElementById('btn-turret').disabled = G.coins < tCost;
+
+  // Upgrade selected
+  const upgBtn = document.getElementById('btn-upgrade-sel');
+  if (G.selectedTurret && G.selectedTurret.level < TURRET_LEVELS.length - 1) {
+    const nextCost = TURRET_LEVELS[G.selectedTurret.level + 1].cost;
+    document.getElementById('upg-cost').textContent = `${nextCost}💰`;
+    upgBtn.disabled = G.coins < nextCost;
+  } else {
+    document.getElementById('upg-cost').textContent = G.selectedTurret ? 'МАКС' : '?💰';
+    upgBtn.disabled = true;
+  }
+
+  // Repair
+  const repBtn = document.getElementById('btn-repair');
+  if (G.isRepairing) {
+    document.getElementById('repair-cd').textContent = 'ИДЁТ...';
+    repBtn.disabled = true;
+  } else if (G.repairCooldown > 0) {
+    document.getElementById('repair-cd').textContent = `${Math.ceil(G.repairCooldown)}с`;
+    repBtn.disabled = true;
+  } else {
+    document.getElementById('repair-cd').textContent = 'ГОТОВО';
+    repBtn.disabled = false;
+  }
+}
+
+function renderSidebar() {
+  renderBuffList();
+  renderAchieveList();
+}
+
+function renderBuffList() {
+  const el = document.getElementById('buff-list');
+  el.innerHTML = '';
+  const earned = ACHIEVEMENTS.filter(a => G.buffsEarned.includes(a.id));
+  if (earned.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:4px">Выполни достижение<br>чтобы получить бафф</div>';
+    return;
+  }
+  for (const a of earned) {
+    const bd = BUFFS_DEF[a.buff];
+    if (!bd) continue;
+    const div = document.createElement('div');
+    div.className = 'achieve-item done';
+    div.innerHTML = `<div>${bd.name}</div><div class="buff-name">${bd.desc}</div>`;
+    div.onclick = () => { bd.action(); toast(`✨ Бафф: ${bd.name}!`, 'gold'); };
+    el.appendChild(div);
+  }
+}
+
+function renderAchieveList() {
+  const el = document.getElementById('achieve-list');
+  el.innerHTML = '';
+  for (const a of ACHIEVEMENTS) {
+    const done = G.buffsEarned.includes(a.id);
+    const div = document.createElement('div');
+    div.className = 'achieve-item' + (done ? ' done' : '');
+    div.innerHTML = `${done ? '★' : '○'} ${a.name}<br><span style="font-size:13px;color:var(--muted)">${a.desc}</span>`;
+    el.appendChild(div);
+  }
+}
+
+// ════════════════════════════════════════════
+//  ACHIEVEMENTS
+// ════════════════════════════════════════════
+function checkAchievements() {
+  for (const a of ACHIEVEMENTS) {
+    if (!G.buffsEarned.includes(a.id) && a.check()) {
+      G.buffsEarned.push(a.id);
+      toast(`★ ДОСТИЖЕНИЕ: ${a.name}!`, 'gold');
+      renderSidebar();
+    }
+  }
+}
+
+// ════════════════════════════════════════════
+//  BUFFS
+// ════════════════════════════════════════════
+function buffRedirect() {
+  if (G.enemies.length > 0) {
+    const en = G.enemies[0];
+    // Just teleport it back to start
+    en.pathIdx = 0;
+    en.x = G.path[0].x * G.cellSize + G.cellSize/2;
+    en.y = G.path[0].y * G.cellSize + G.cellSize/2;
+    toast('👹 Моб перенаправлен!');
+  }
+}
+function buffFreeze() {
+  for (const en of G.enemies) en.frozen = 8;
+  toast('❄ Все мобы заморожены на 8с!');
+}
+function buffDoubleCoins() {
+  activeBuffs.doubleCoins = 30;
+  toast('💰 Двойные монеты на 30с!');
+}
+function buffAirstrike() {
+  const killed = G.enemies.length;
+  for (const en of G.enemies) spawnParticles(en.x, en.y, '#ff6b35', 10);
+  G.coins += killed * 8;
+  G.kills += killed;
+  G.enemies = [];
+  toast(`💥 Авиаудар! Уничтожено ${killed} мобов!`);
+}
+function buffInstantRepair() {
+  G.doorHp = G.doorMaxHp;
+  G.isRepairing = false;
+  G.repairingProgress = 0;
+  document.getElementById('repair-bar-wrap').classList.remove('active');
+  toast('🔧 Дверь мгновенно починена!');
+}
+function buffWall() {
+  activeBuffs.wall = 60;
+  toast('🛡 Дверь неуязвима 60с!');
+}
+function buffGoldRush() {
+  G.coins += 500;
+  toast('💰 +500 монет!', 'gold');
+}
+function buffGodMode() {
+  activeBuffs.godMode = 20;
+  toast('⚡ РЕЖИМ БОГА на 20с!', 'gold');
+}
+
+// ════════════════════════════════════════════
+//  GAMEOVER
+// ════════════════════════════════════════════
+function gameOver() {
+  G.gameRunning = false;
+  document.getElementById('gameover-stats').innerHTML =
+    `Волна: <span>${G.wave}</span><br>Убито мобов: <span>${G.kills}</span><br>Монет заработано: <span>${Math.floor(G.coins)}</span>`;
+  showScreen('gameover-screen');
+}
+
+// ════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  const container = document.getElementById('toast-container');
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ════════════════════════════════════════════
+//  RESIZE
+// ════════════════════════════════════════════
+window.addEventListener('resize', () => {
+  if (G.gameRunning) initCanvas();
+});
+
+// ESC cancel placing
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    G.placingTurret = false;
+    G.selectedTurret = null;
+    canvas.style.cursor = 'crosshair';
+  }
+});
+</script>
+</body>
+</html>
